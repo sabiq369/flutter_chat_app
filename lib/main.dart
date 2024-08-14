@@ -1,6 +1,14 @@
+import 'package:chat_app/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  String fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
+  print('||||||||||||||| FCM TOKEN||||||||||||||| ');
+  print(fcmToken);
   runApp(const MyApp());
 }
 
