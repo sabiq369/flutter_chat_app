@@ -39,7 +39,10 @@ dependencies:
   get:
   firebase_core:
   firebase_messaging:
+  cloud_firestore:
+  firebase_auth:
   cached_network_image:
+  fluttertoast:
 
 dev_dependencies:
   flutter_test:
