@@ -1,6 +1,9 @@
+import 'dart:ffi';
+
 import 'package:chat_app/chat_list/view/chat_list.dart';
 import 'package:chat_app/chat_page/view/chat_page.dart';
 import 'package:chat_app/services/firebase_services.dart';
+import 'package:chat_app/utils/widgets/common_functions.dart';
 import 'package:get/get.dart';
 
 class LoginController extends GetxController {
@@ -8,15 +11,13 @@ class LoginController extends GetxController {
 
   login({required String email, required String password}) async {
     isLoading.value = true;
-    var response =
-        await AuthServices().signInUser(email: email, password: password);
-    if (response != null) {
-      if (response) {
-        isLoading.value = false;
-        Get.offAll(() => ChatList());
-      } else {
-        isLoading.value = false;
-      }
+    try {
+      await AuthServices().signInUser(email: email, password: password);
+      isLoading.value = false;
+      Get.offAll(() => ChatList());
+    } catch (e) {
+      isLoading.value = false;
+      showToast(msg: e.toString());
     }
   }
 }

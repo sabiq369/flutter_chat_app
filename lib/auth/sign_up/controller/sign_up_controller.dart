@@ -1,6 +1,7 @@
 import 'package:chat_app/chat_list/view/chat_list.dart';
 import 'package:chat_app/chat_page/view/chat_page.dart';
 import 'package:chat_app/services/firebase_services.dart';
+import 'package:chat_app/utils/widgets/common_functions.dart';
 import 'package:get/get.dart';
 
 class SignUpController extends GetxController {
@@ -16,18 +17,16 @@ class SignUpController extends GetxController {
     print(email);
     print(password);
     isLoading.value = true;
-    var response = await AuthServices()
-        .signUpUser(name: name, email: email, password: password);
-    print('|||||||||| response ||||||||||');
-    print(response);
-    if (response != null) {
-      if (response) {
-        isLoading.value = false;
+    try {
+      await AuthServices()
+          .signUpUser(name: name, email: email, password: password);
 
-        Get.offAll(() => ChatList());
-      } else {
-        isLoading.value = false;
-      }
+      isLoading.value = false;
+
+      Get.offAll(() => ChatList());
+    } catch (e) {
+      showToast(msg: e.toString());
+      isLoading.value = false;
     }
   }
 }

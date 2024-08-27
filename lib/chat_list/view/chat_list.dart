@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/chat_page/controller/chat_controller.dart';
-import 'package:chat_app/login/view/login.dart';
 import 'package:chat_app/services/firebase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,8 +10,6 @@ class ChatList extends StatelessWidget {
   ChatList({Key? key}) : super(key: key);
   ChatController controller = Get.put(ChatController());
   final TextEditingController msgController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final Stream<QuerySnapshot> _msgStream = FirebaseFirestore.instance
       .collection("users")
       .orderBy("name")
