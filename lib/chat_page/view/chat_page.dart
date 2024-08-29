@@ -1,4 +1,5 @@
 import 'package:chat_app/chat_page/controller/chat_controller.dart';
+import 'package:chat_app/utils/api.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +9,6 @@ class ChatPage extends StatelessWidget {
   ChatPage({Key? key, required this.name}) : super(key: key);
   ChatController controller = Get.put(ChatController());
   final TextEditingController msgController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final Stream<QuerySnapshot> _msgStream = FirebaseFirestore.instance
-      .collection("messages")
-      .orderBy("time")
-      .snapshots();
   final String name;
   @override
   Widget build(BuildContext context) {
@@ -40,7 +35,7 @@ class ChatPage extends StatelessWidget {
           children: [
             Expanded(
               child: StreamBuilder(
-                stream: _msgStream,
+                stream: Api.fireStore.collection("users").snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                   if (snapshot.hasError) {
                     return Text('Something went wrong');
@@ -52,13 +47,14 @@ class ChatPage extends StatelessWidget {
                       ),
                     );
                   }
+                  var data = snapshot.data!.docs;
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: BouncingScrollPhysics(),
-                    itemCount: snapshot.data!.docs.length,
+                    itemCount: data.length,
                     itemBuilder: (context, index) {
-                      QueryDocumentSnapshot qds = snapshot.data!.docs[index];
-                      return Text(qds['message']);
+                      [index];
+                      return Text(data[index]['message']);
                     },
                   );
                 },
@@ -75,7 +71,7 @@ class ChatPage extends StatelessWidget {
                 IconButton(
                     onPressed: () {
                       if (msgController.text.isNotEmpty) {
-                        _firestore.collection("messages").doc().set({
+                        Api.fireStore.collection("messages").doc().set({
                           "message": msgController.text.trim(),
                           "time": DateTime.now(),
                         });

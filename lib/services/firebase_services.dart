@@ -1,23 +1,27 @@
+import 'package:chat_app/utils/api.dart';
 import 'package:chat_app/utils/widgets/common_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthServices {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   Future<UserCredential> signUpUser({
     required String name,
     required String email,
     required String password,
   }) async {
     try {
-      UserCredential credential = await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
-      await _firestore.collection("users").doc(credential.user!.uid).set({
+      UserCredential credential = await Api.auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+      await Api.fireStore.collection("users").doc(credential.user!.uid).set({
+        "id": credential.user!.uid,
         "name": name,
         "email": email,
-        "uid": credential.user!.uid,
+        "image": "",
+        "created_at": DateTime.now().millisecondsSinceEpoch.toString(),
+        "is_online": false,
+        "last_active": DateTime.now().millisecondsSinceEpoch.toString(),
+        "push_toke": '',
       });
 
       showToast(msg: "Successfully registered");
@@ -30,8 +34,8 @@ class AuthServices {
   Future<UserCredential> signInUser(
       {required String email, required String password}) async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
+      UserCredential userCredential = await Api.auth
+          .signInWithEmailAndPassword(email: email, password: password);
       showToast(msg: 'Login successful');
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -43,7 +47,8 @@ class AuthServices {
   // for signOut
   Future signOut() async {
     try {
-      await _auth.signOut();
+      await Api.auth.signOut();
+      await GoogleSignIn().signOut();
       return true;
     } catch (e) {
       showToast(msg: e.toString());
