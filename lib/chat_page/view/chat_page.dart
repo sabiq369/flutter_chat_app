@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/chat_page/controller/chat_controller.dart';
 import 'package:chat_app/utils/api.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,84 +7,155 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatPage extends StatelessWidget {
-  ChatPage({Key? key, required this.name}) : super(key: key);
+  ChatPage({
+    Key? key,
+    required this.recieverId,
+    required this.name,
+    required this.profileImage,
+    required this.chatroomId,
+  }) : super(key: key);
   ChatController controller = Get.put(ChatController());
   final TextEditingController msgController = TextEditingController();
-  final String name;
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final FirebaseFirestore fireStore = FirebaseFirestore.instance;
+  final String recieverId, name, profileImage, chatroomId;
+
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      return Scaffold(
+    print(name);
+    print(profileImage);
+    print(recieverId);
+    print(auth.currentUser!.uid);
+    // return Obx(() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          actions: [
-            controller.signOutLoading.value
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: CircularProgressIndicator(
-                      color: Colors.black,
-                    ),
-                  )
-                : TextButton(
-                    onPressed: () => controller.signOut(),
-                    child: Text('Logout')),
-            SizedBox(width: 15)
-          ],
-        ),
-        body: Column(
+        toolbarHeight: 60,
+        titleSpacing: 0,
+        title: Row(
           children: [
-            Expanded(
-              child: StreamBuilder(
-                stream: Api.fireStore.collection("users").snapshots(),
-                builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (snapshot.hasError) {
-                    return Text('Something went wrong');
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.black,
-                      ),
-                    );
-                  }
-                  var data = snapshot.data!.docs;
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: BouncingScrollPhysics(),
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      [index];
-                      return Text(data[index]['message']);
-                    },
-                  );
-                },
+            ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: CachedNetworkImage(
+                imageUrl: profileImage,
+                width: 55,
+                height: 55,
               ),
             ),
-            Row(
+            SizedBox(width: 10),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: msgController,
-                    decoration: InputDecoration(),
-                  ),
+                Text(
+                  name,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black),
                 ),
-                IconButton(
-                    onPressed: () {
-                      if (msgController.text.isNotEmpty) {
-                        Api.fireStore.collection("messages").doc().set({
-                          "message": msgController.text.trim(),
-                          "time": DateTime.now(),
-                        });
-                        msgController.clear();
-                      }
-                    },
-                    icon: Icon(Icons.send))
+                Text(
+                  'Last seen',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey),
+                ),
               ],
             )
           ],
         ),
-      );
-    });
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          children: [
+            Expanded(
+                child: StreamBuilder(
+              stream: fireStore
+                  .collection("chats/$chatroomId/messages")
+                  .snapshots(),
+              builder: (context, snapshot) {
+                return ListView.builder(
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    QueryDocumentSnapshot data = snapshot.data!.docs[index];
+
+                    return Align(
+                      alignment: recieverId == data["id"]
+                          ? Alignment.topLeft
+                          : Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width - 150),
+                          child: Text(
+                            data["message"],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            )),
+            Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    color: Colors.white,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: Icon(Icons.emoji_emotions),
+                        ),
+                        Expanded(
+                            child: TextFormField(
+                          controller: msgController,
+                          decoration: InputDecoration(
+                            hintText: 'Message $name',
+                            border: InputBorder.none,
+                          ),
+                        )),
+                        IconButton(
+                          onPressed: () {},
+                          icon: Icon(Icons.image),
+                        ),
+                        IconButton(
+                            onPressed: () {}, icon: Icon(Icons.camera_alt))
+                      ],
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    final time =
+                        DateTime.now().millisecondsSinceEpoch.toString();
+                    fireStore
+                        .collection("chats/$chatroomId/messages")
+                        .doc(time)
+                        .set({
+                      "message": msgController.text,
+                      "id": auth.currentUser!.uid,
+                      // "from_id": auth.currentUser!.uid,
+                      "read": "",
+                      "type": "1",
+                      "sent": time,
+                    });
+                    msgController.text = '';
+                  },
+                  icon: Icon(Icons.send),
+                )
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    // });
   }
 }

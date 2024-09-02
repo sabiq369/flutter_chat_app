@@ -1,15 +1,8 @@
-import 'dart:convert';
-import 'dart:developer';
-import 'dart:io';
-import 'dart:math';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_app/chat_list/controller/chat_list_controller.dart';
 import 'package:chat_app/chat_list/model/chat_user_model.dart';
-import 'package:chat_app/chat_page/controller/chat_controller.dart';
+import 'package:chat_app/chat_page/view/chat_page.dart';
 import 'package:chat_app/profile/view/profile.dart';
-import 'package:chat_app/services/firebase_services.dart';
-import 'package:chat_app/utils/api.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -101,35 +94,74 @@ class ChatList extends StatelessWidget {
                           QueryDocumentSnapshot data =
                               snapshot.data!.docs[index];
 
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(100),
-                                    child: CachedNetworkImage(
-                                      imageUrl: data["image"],
-                                      width: 55,
-                                      height: 55,
+                          return InkWell(
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            onTap: () => chatListController.goToChatRoom(
+                              name: data["name"],
+                              profileImage: data["image"],
+                              recieverId: data["id"],
+                              senderId: auth.currentUser!.uid,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(100),
+                                      child: CachedNetworkImage(
+                                        imageUrl: data["image"],
+                                        width: 55,
+                                        height: 55,
+                                      ),
                                     ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 5,
+                                      child: CircleAvatar(
+                                        backgroundColor: Colors.green,
+                                        radius: 8,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        data['name'],
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                      StreamBuilder(
+                                        stream: fireStore
+                                            .collection("chats/${[
+                                              auth.currentUser!.uid,
+                                              data["id"]
+                                            ]..sort()}/messages")
+                                            .snapshots(),
+                                        builder: (context, snapshot) {
+                                          final data = snapshot.data!.docs;
+                                          if (data.isEmpty) {
+                                            return Text('Send message');
+                                          }
+
+                                          return Text(
+                                              data[data.length - 1]["message"]);
+                                        },
+                                      )
+                                    ],
                                   ),
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 5,
-                                    child: CircleAvatar(
-                                      backgroundColor: Colors.green,
-                                      radius: 8,
-                                    ),
-                                  )
-                                ],
-                              ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(data['name']),
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           );
                         },
                       );
